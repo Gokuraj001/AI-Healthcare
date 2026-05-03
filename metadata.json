@@ -1,0 +1,6 @@
+{
+  "name": "MindCare AI",
+  "description": "A comprehensive mental health monitoring and support platform featuring AI-powered therapy assistance, sentiment analysis, daily mood tracking, and community support.",
+  "requestFramePermissions": ["geolocation", "microphone"],
+  "majorCapabilities": []
+}

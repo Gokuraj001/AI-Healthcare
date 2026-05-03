@@ -1,0 +1,224 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Public and private user information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "riskLevel": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "zenPoints": { "type": "integer", "description": "Global relaxation score" },
+        "bubblePopHighScore": { "type": "integer", "description": "Highest score achieved in Bubble Pop" },
+        "breathingHighScore": { "type": "integer", "description": "Total completions or high score for Breathing" },
+        "age": { "type": "integer" },
+        "gender": { "type": "string", "enum": ["male", "female", "other", "prefer-not-to-say"] },
+        "height": { "type": "number", "description": "Height in cm" },
+        "weight": { "type": "number", "description": "Weight in kg" },
+        "bloodGroup": { "type": "string", "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] },
+        "activityLevel": { "type": "string", "enum": ["sedentary", "lightly-active", "moderately-active", "very-active", "extra-active"] },
+        "healthGoals": { "type": "array", "items": { "type": "string" } },
+        "stressFactors": { "type": "array", "items": { "type": "string" } },
+        "sleepGoal": { "type": "number", "description": "Target hours of sleep" },
+        "waterGoal": { "type": "number", "description": "Target liters of water" },
+        "onboardingCompleted": { "type": "boolean" },
+        "lastCheckedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "joinedAt"]
+    },
+    "DailyLog": {
+      "title": "Daily Wellness Log",
+      "description": "Daily tracking data for mood, sleep, and feelings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "mood": { "type": "string", "enum": ["happy", "neutral", "sad", "anxious", "angry"] },
+        "energy": { "type": "integer", "description": "1-10 scale" },
+        "sleepHours": { "type": "number" },
+        "sleepQuality": { "type": "integer", "description": "1-5 scale" },
+        "journalEntry": { "type": "string" },
+        "sentiment": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "mood", "createdAt"]
+    },
+    "CommunityPost": {
+      "title": "Community Forum Post",
+      "description": "Anonymized or public community posts",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Post Comment",
+      "description": "Comments on community posts",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "content", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "AI Chat Message",
+      "description": "Message between user and AI assistant within a specific session",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "text", "createdAt"]
+    },
+    "ChatSession": {
+      "title": "AI Chat Session",
+      "description": "A group of messages forming a single conversation context",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessageAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "createdAt"]
+    },
+    "SuggestedClinic": {
+      "title": "Suggested Clinic",
+      "description": "A clinic or therapist suggested by the community",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "suggestionType": { "type": "string", "enum": ["clinic", "therapist", "hospital"] },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "suggestedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "address", "suggestionType", "lat", "lng", "suggestedBy", "createdAt"]
+    },
+    "RelaxationSession": {
+      "title": "Relaxation Session",
+      "description": "Record of a completed relaxation exercise",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["breathing", "bubbles", "yoga"] },
+        "pointsEarned": { "type": "integer" },
+        "durationSeconds": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "pointsEarned", "createdAt"]
+    },
+    "WellnessPlan": {
+      "title": "Daily AI Wellness Plan",
+      "description": "AI-generated daily schedule for mental health",
+      "type": "object",
+      "properties": {
+        "morning": { "type": "object" },
+        "afternoon": { "type": "object" },
+        "evening": { "type": "object" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "moodAtGeneration": { "type": "string" }
+      },
+      "required": ["morning", "afternoon", "evening", "generatedAt"]
+    },
+    "ResilienceStory": {
+      "title": "Resilience Story",
+      "description": "User-shared story of overcoming mental health challenges",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "handle": { "type": "string" },
+        "photo": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "handle", "content", "category", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": "DailyLog",
+      "description": "User daily tracking historical data"
+    },
+    "/users/{userId}/plans/{date}": {
+      "schema": "WellnessPlan",
+      "description": "Daily AI-generated wellness schedules"
+    },
+    "/users/{userId}/chatSessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "User's individual chat sessions"
+    },
+    "/users/{userId}/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages within a specific chat session"
+    },
+    "/communityPosts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "General community discussion forum"
+    },
+    "/communityPosts/{postId}/likes/{userId}": {
+      "schema": {
+        "title": "Post Like",
+        "type": "object",
+        "properties": {
+          "likedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Tracking likes per user to allow toggling"
+    },
+    "/resilienceStories/{storyId}": {
+      "schema": "ResilienceStory",
+      "description": "Shared stories in the Awareness section"
+    },
+    "/resilienceStories/{storyId}/likes/{userId}": {
+      "schema": {
+        "title": "Story Like",
+        "type": "object",
+        "properties": {
+          "likedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Tracking likes for resilience stories"
+    },
+    "/resilienceStories/{storyId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments/replies on resilience stories"
+    },
+    "/suggestedClinics/{clinicId}": {
+      "schema": "SuggestedClinic",
+      "description": "Community-sourced clinic locations"
+    },
+    "/communityPosts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments attached to specific forum posts"
+    },
+    "/relaxationSessions/{sessionId}": {
+      "schema": "RelaxationSession",
+      "description": "Log of user relaxation activities"
+    }
+  }
+}

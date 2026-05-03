@@ -1,0 +1,176 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true || 
+        request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // --- User Rules ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn(); 
+      allow create: if isOwner(userId) && 
+        incoming().keys().hasAll(['uid', 'email', 'joinedAt']) &&
+        incoming().uid == request.auth.uid;
+      allow update: if isOwner(userId) && 
+        incoming().diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'photoURL', 'bio', 'riskLevel', 'lastCheckedAt', 
+          'zenPoints', 'age', 'gender', 'height', 'weight', 
+          'bloodGroup', 'activityLevel', 'healthGoals', 'stressFactors',
+          'sleepGoal', 'waterGoal', 'onboardingCompleted',
+          'bubblePopHighScore', 'breathingHighScore'
+        ]);
+    }
+
+    // --- Daily Log Rules ---
+    match /users/{userId}/logs/{logId} {
+      allow read, delete: if isOwner(userId) && isValidId(logId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(logId) && isVerified() &&
+        incoming().userId == request.auth.uid &&
+        incoming().mood in ['happy', 'neutral', 'sad', 'anxious', 'angry'] &&
+        (incoming().createdAt == request.time || incoming().createdAt is string);
+    }
+
+    // --- Wellness Plan Rules ---
+    match /users/{userId}/plans/{date} {
+      allow read: if isOwner(userId) && isValidId(date);
+      allow create, update: if isOwner(userId) && isValidId(date) &&
+        incoming().keys().hasAll(['morning', 'afternoon', 'evening', 'generatedAt']);
+    }
+
+    // --- Chat Session Rules ---
+    match /users/{userId}/chatSessions/{sessionId} {
+      allow read, delete: if isOwner(userId) && isValidId(sessionId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(sessionId) && isVerified() &&
+        incoming().keys().hasAll(['title', 'createdAt']) &&
+        (incoming().createdAt == request.time || incoming().createdAt is string);
+      allow update: if isOwner(userId) && isValidId(sessionId) && isVerified() &&
+        incoming().diff(resource.data).affectedKeys().hasOnly(['title', 'lastMessageAt']);
+
+      match /messages/{messageId} {
+        allow read, delete: if isOwner(userId) && isValidId(messageId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(messageId) && isVerified() &&
+          incoming().keys().hasAll(['role', 'text', 'createdAt']) &&
+          incoming().role in ['user', 'model'] &&
+          (incoming().createdAt == request.time || incoming().createdAt is string);
+      }
+    }
+
+    match /suggestedClinics/{clinicId} {
+      allow read: if isSignedIn() && isValidId(clinicId);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().suggestedBy == request.auth.uid &&
+        incoming().createdAt == request.time;
+    }
+
+    // --- Community Rules ---
+    match /communityPosts/{postId} {
+      allow read: if isSignedIn() && isValidId(postId);
+      allow list: if isSignedIn();
+      allow create: if isVerified() && isValidId(postId) &&
+        incoming().authorId == request.auth.uid &&
+        (incoming().createdAt == request.time || incoming().createdAt is string);
+      allow update: if isVerified() && isValidId(postId) && (
+        // Only author can edit content
+        (resource.data.authorId == request.auth.uid && incoming().diff(resource.data).affectedKeys().hasOnly(['content', 'title', 'isAnonymous'])) ||
+        // Anyone can increment likes
+        (incoming().diff(resource.data).affectedKeys().hasOnly(['likesCount']))
+      );
+      allow delete: if isVerified() && isValidId(postId) && resource.data.authorId == request.auth.uid;
+
+      match /likes/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(userId) && isValidId(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn() && isValidId(commentId);
+        allow list: if isSignedIn();
+        allow create: if isVerified() && isValidId(commentId) &&
+          incoming().authorId == request.auth.uid &&
+          (incoming().createdAt == request.time || incoming().createdAt is string);
+        allow delete: if isVerified() && isValidId(commentId) && resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    // --- Relaxation Session Rules ---
+    match /relaxationSessions/{sessionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && 
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+    }
+
+    // --- Resilience Stories Rules ---
+    match /resilienceStories/{storyId} {
+      allow get: if isSignedIn() && isValidId(storyId);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn(); // Allow seeding
+      allow update: if isSignedIn() && (
+        incoming().diff(resource.data).affectedKeys().hasOnly(['likesCount'])
+      );
+      
+      match /likes/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(userId) && isValidId(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /comments/{commentId} {
+        allow get: if isSignedIn() && isValidId(commentId);
+        allow list: if isSignedIn();
+        allow create: if isVerified() && 
+          incoming().authorId == request.auth.uid &&
+          incoming().createdAt == request.time;
+        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // --- Feedback ---
+    match /feedback/{feedbackId} {
+      allow create: if isSignedIn() && 
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow read: if isAdmin();
+    }
+
+    // --- Admin Helper ---
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ['admin@mindcare.com', 'developer@mindcare.com'] ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+  }
+}
