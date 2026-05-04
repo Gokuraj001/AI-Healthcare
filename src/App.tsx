@@ -19,6 +19,7 @@ import Onboarding from './pages/Onboarding';
 import Profile from './pages/Profile';
 import { motion, AnimatePresence } from 'motion/react';
 import MoodReminder from './components/MoodReminder';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import { ShieldAlert, Send, RefreshCw } from 'lucide-react';
 import { sendEmailVerification, reload } from 'firebase/auth';
@@ -179,6 +180,7 @@ export default function App() {
   return (
     <AuthProvider>
       <PageRouter />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
